@@ -1,0 +1,34 @@
+﻿@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div id="@DraggableId" draggable="true">
+    @ChildContent
+</div>
+
+@code 
+{
+    [Parameter] public Guid DraggableId { get; set; } = Guid.NewGuid();
+    [Parameter] public RenderFragment ChildContent { get; set; } = null!;
+
+    private IJSObjectReference? jsModule;
+    private const string ModulePath = $"./_content/BLZR.Components.DragonDrop/DraggableItem.razor.js";
+    private const string FunctionName = "addDragStartListener";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            jsModule = await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
+
+            await jsModule.InvokeVoidAsync(FunctionName, DraggableId);
+        }
+    }
+
+    async ValueTask IAsyncDisposable.DisposeAsync()
+    {
+        if (jsModule is not null)
+        {
+            await jsModule.DisposeAsync();
+        }
+    }
+}
